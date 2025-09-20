@@ -74,13 +74,6 @@
       cursor: pointer;
       margin-top: 6px;
     }
-    .footer {
-      text-align: right;
-      color: orange;
-      font-size: 1.1em;
-      margin: 28px 10px 14px 0;
-      display: none;
-    }
     @media (max-width: 400px) {
       .mini-window {
         max-width: 97vw;
@@ -90,7 +83,7 @@
     }
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script>
     // Your Firebase config
     const firebaseConfig = {
@@ -103,24 +96,17 @@
       measurementId: "G-5SSTY9BBYT"
     };
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
 
     async function adminLogin() {
       const uname = document.getElementById('admin-user').value;
       const pass = document.getElementById('admin-pass').value;
-
-      // Change to your Firestore admin collection/fields as needed
-      const snapshot = await db.collection('admin-logins')
-        .where('username', '==', uname)
-        .where('password', '==', pass)
-        .get();
-
-      if (!snapshot.empty) {
+      try {
+        await firebase.auth().signInWithEmailAndPassword(uname, pass);
         document.getElementById('login-window').style.display = "none";
         document.getElementById('admin-tools').style.display = "flex";
         document.getElementById('admin-section').innerHTML = "";
-      } else {
-        alert('Invalid credentials');
+      } catch (error) {
+        alert('Login failed: ' + error.message);
       }
     }
 
@@ -133,7 +119,7 @@
 <body>
   <div class="header">Admin Panel</div>
   <div class="mini-window" id="login-window">
-    <label for="admin-user">Admin Username:</label>
+    <label for="admin-user">Admin Username (Email):</label>
     <input type="text" id="admin-user" class="input" autocomplete="username">
     <label for="admin-pass">Password:</label>
     <input type="password" id="admin-pass" class="input" autocomplete="current-password">
