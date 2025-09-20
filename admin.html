@@ -2,43 +2,149 @@
 <html>
 <head>
   <title>Admin - Betting Show</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    body { font-family: 'Comic Sans MS', 'Arial', sans-serif; background: #fcfcfc;}
-    .header { text-align: center; font-size: 2em; color: #599e67; font-weight: bold; margin: 18px;}
-    .nav-btns { display: flex; justify-content: center; gap: 30px; margin-bottom: 20px;}
-    .nav-btn { border: 2px solid #57a5e0; padding: 10px 20px; border-radius: 8px; background: #fff; font-weight: bold; cursor: pointer; }
-    .mini-window { border: 2px solid #aaa; background: #f7f7fa; margin: 25px auto; padding: 25px; width: 340px; border-radius: 12px;}
-    .footer { text-align: right; color: orange; font-size: 1.4em; margin-top: 16px;}
-    .input, select { margin-bottom: 12px;}
+    body {
+      font-family: 'Comic Sans MS', 'Arial', sans-serif;
+      background: #fcfcfc;
+      margin: 0;
+      padding: 0;
+    }
+    .header {
+      text-align: center;
+      font-size: 2em;
+      color: #599e67;
+      font-weight: bold;
+      margin: 18px 0 24px 0;
+    }
+    .nav-btns {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .nav-btn {
+      border: 2px solid #57a5e0;
+      padding: 10px 16px;
+      border-radius: 8px;
+      background: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1.1em;
+    }
+    .mini-window {
+      border: 1.5px solid #aaa;
+      background: #f7f7fa;
+      margin: 36px auto 0 auto;
+      padding: 16px 12px 18px 12px;
+      width: 95%;
+      max-width: 350px;
+      border-radius: 10px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    label {
+      margin-bottom: 4px;
+      font-size: 1em;
+      color: #333;
+      align-self: flex-start;
+    }
+    .input, input[type="password"], input[type="text"]{
+      width: 100%;
+      font-size: 1em;
+      padding: 8px 6px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid #c4c4c4;
+      background: #fff;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 9px 0;
+      font-size: 1.1em;
+      color: #fff;
+      background: #57a5e0;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+    .footer {
+      text-align: right;
+      color: orange;
+      font-size: 1.1em;
+      margin: 28px 10px 14px 0;
+      display: none;
+    }
+    @media (max-width: 400px) {
+      .mini-window {
+        max-width: 97vw;
+        padding: 8px 3vw;
+      }
+      .header { font-size: 1.15em; }
+    }
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script>
-    const firebaseConfig = { /* config here */ };
+    // Your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQ780suirYkoWnyiTElsulpPLep7jZOBs",
+      authDomain: "fir-restaurants-5a977.firebaseapp.com",
+      projectId: "fir-restaurants-5a977",
+      storageBucket: "fir-restaurants-5a977.appspot.com",
+      messagingSenderId: "536510676521",
+      appId: "1:536510676521:web:6a9777efcd5b2508afa638",
+      measurementId: "G-5SSTY9BBYT"
+    };
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    // Add login, section selection, edit/add/delete, and background image upload logic here
+    const db = firebase.firestore();
+
+    async function adminLogin() {
+      const uname = document.getElementById('admin-user').value;
+      const pass = document.getElementById('admin-pass').value;
+
+      // Change to your Firestore admin collection/fields as needed
+      const snapshot = await db.collection('admin-logins')
+        .where('username', '==', uname)
+        .where('password', '==', pass)
+        .get();
+
+      if (!snapshot.empty) {
+        document.getElementById('login-window').style.display = "none";
+        document.getElementById('admin-tools').style.display = "flex";
+        document.getElementById('admin-section').innerHTML = "";
+      } else {
+        alert('Invalid credentials');
+      }
+    }
+
+    function showAdminSection(section) {
+      document.getElementById('admin-section').innerHTML =
+        `<div style="margin:24px auto;text-align:center">[${section} management coming soon]</div>`;
+    }
   </script>
 </head>
 <body>
   <div class="header">Admin Panel</div>
-  <!-- Login Form -->
   <div class="mini-window" id="login-window">
-    <label>Admin Username:</label><br>
-    <input type="text" id="admin-user" class="input"><br>
-    <label>Password:</label><br>
-    <input type="password" id="admin-pass" class="input"><br>
+    <label for="admin-user">Admin Username:</label>
+    <input type="text" id="admin-user" class="input" autocomplete="username">
+    <label for="admin-pass">Password:</label>
+    <input type="password" id="admin-pass" class="input" autocomplete="current-password">
     <button onclick="adminLogin()">Login</button>
   </div>
-  <!-- Once logged in, show navigation -->
   <div class="nav-btns" id="admin-tools" style="display:none;">
     <span class="nav-btn" onclick="showAdminSection('live-match')">Live Match</span>
     <span class="nav-btn" onclick="showAdminSection('upcoming-match')">Upcoming Match</span>
     <span class="nav-btn" onclick="showAdminSection('results')">Results</span>
     <span class="nav-btn" onclick="showAdminSection('bgi')">BGI</span>
   </div>
-  <!-- Section content rendered dynamically here -->
   <div id="admin-section"></div>
-  <div class="footer">Admin Control</div>
 </body>
 </html>
