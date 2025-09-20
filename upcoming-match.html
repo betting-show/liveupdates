@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Betting Show - Upcoming Match</title>
+  <style>
+    body { background-image: url("https://firebasestorage.googleapis.com/v0/b/fir-restaurants-5a977.appspot.com/o/bgm%2Fupcoming-match.jpeg?alt=media"); background-size: cover; font-family: 'Comic Sans MS', 'Arial', sans-serif;}
+    .header { text-align: center; font-size: 2.5em; color: #a6df81; font-weight: bold; margin: 16px; }
+    .nav-btns { display: flex; justify-content: center; gap: 35px; margin-bottom: 24px; }
+    .nav-btn { border: 2px solid #57a5e0; padding: 12px 26px; border-radius: 8px; cursor: pointer; font-size: 1.3em; background: #fff; font-weight: bold;}
+    .headline-link { font-size: 1.2em; display: block; margin: 0 0 28px 0; text-decoration: none; color: #000; font-weight: bold; }
+    .footer { text-align: right; color: orange; font-size: 1.4em; margin: 16px 10px 10px 0; }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQ780suirYkoWnyiTElsulpPLep7jZOBs",
+      authDomain: "fir-restaurants-5a977.firebaseapp.com",
+      projectId: "fir-restaurants-5a977",
+      storageBucket: "fir-restaurants-5a977.appspot.com",
+      messagingSenderId: "536510676521",
+      appId: "1:536510676521:web:6a9777efcd5b2508afa638",
+      measurementId: "G-5SSTY9BBYT"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    window.onload = async function() {
+      let html = '';
+      const snapshot = await db.collection("upcoming-match").get();
+      let i = 1;
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if(data.headline) {
+          html += `<a class="headline-link" href="upcoming-match${i}.html">${i}) ${data.headline}</a>`;
+        }
+        i++;
+      });
+      document.getElementById('upcoming-matches').innerHTML = html;
+    };
+  </script>
+</head>
+<body>
+  <div class="header">Betting Show</div>
+  <div class="nav-btns">
+    <span class="nav-btn" onclick="location.href='live-match.html'">Live Match</span>
+    <span class="nav-btn" onclick="location.href='upcoming-match.html'">Upcoming Match</span>
+    <span class="nav-btn" onclick="location.href='results.html'">Results</span>
+  </div>
+  <div id="upcoming-matches"></div>
+  <div class="footer">Page 1</div>
+</body>
+</html>

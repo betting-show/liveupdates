@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin - Betting Show</title>
+  <style>
+    body { font-family: 'Comic Sans MS', 'Arial', sans-serif; background: #fcfcfc;}
+    .header { text-align: center; font-size: 2em; color: #599e67; font-weight: bold; margin: 18px;}
+    .nav-btns { display: flex; justify-content: center; gap: 30px; margin-bottom: 20px;}
+    .nav-btn { border: 2px solid #57a5e0; padding: 10px 20px; border-radius: 8px; background: #fff; font-weight: bold; cursor: pointer; }
+    .mini-window { border: 2px solid #aaa; background: #f7f7fa; margin: 25px auto; padding: 25px; width: 340px; border-radius: 12px;}
+    .footer { text-align: right; color: orange; font-size: 1.4em; margin-top: 16px;}
+    .input, select { margin-bottom: 12px;}
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = { /* config here */ };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    // Add login, section selection, edit/add/delete, and background image upload logic here
+  </script>
+</head>
+<body>
+  <div class="header">Admin Panel</div>
+  <!-- Login Form -->
+  <div class="mini-window" id="login-window">
+    <label>Admin Username:</label><br>
+    <input type="text" id="admin-user" class="input"><br>
+    <label>Password:</label><br>
+    <input type="password" id="admin-pass" class="input"><br>
+    <button onclick="adminLogin()">Login</button>
+  </div>
+  <!-- Once logged in, show navigation -->
+  <div class="nav-btns" id="admin-tools" style="display:none;">
+    <span class="nav-btn" onclick="showAdminSection('live-match')">Live Match</span>
+    <span class="nav-btn" onclick="showAdminSection('upcoming-match')">Upcoming Match</span>
+    <span class="nav-btn" onclick="showAdminSection('results')">Results</span>
+    <span class="nav-btn" onclick="showAdminSection('bgi')">BGI</span>
+  </div>
+  <!-- Section content rendered dynamically here -->
+  <div id="admin-section"></div>
+  <div class="footer">Admin Control</div>
+</body>
+</html>

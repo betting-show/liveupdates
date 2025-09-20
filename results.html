@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Betting Show - Results</title>
+  <style>
+    body { background-image: url("https://firebasestorage.googleapis.com/v0/b/fir-restaurants-5a977.appspot.com/o/bgm%2Fresults.jpeg?alt=media"); background-size: cover; font-family: 'Comic Sans MS', 'Arial', sans-serif;}
+    .header { text-align: center; font-size: 2.5em; color: #a6df81; font-weight: bold; margin: 16px; }
+    .nav-btns { display: flex; justify-content: center; gap: 35px; margin-bottom: 24px; }
+    .nav-btn { border: 2px solid #57a5e0; padding: 12px 26px; border-radius: 8px; cursor: pointer; font-size: 1.3em; background: #fff; font-weight: bold;}
+    .result-block { margin-bottom: 36px; }
+    .result-img { display: block; border: 4px solid #e03c3c; margin: 18px auto; width: 260px; height: 140px; object-fit: cover; }
+    .footer { text-align: right; color: orange; font-size: 1.4em; margin: 16px 10px 10px 0; }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQ780suirYkoWnyiTElsulpPLep7jZOBs",
+      authDomain: "fir-restaurants-5a977.firebaseapp.com",
+      projectId: "fir-restaurants-5a977",
+      storageBucket: "fir-restaurants-5a977.appspot.com",
+      messagingSenderId: "536510676521",
+      appId: "1:536510676521:web:6a9777efcd5b2508afa638",
+      measurementId: "G-5SSTY9BBYT"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    window.onload = async function() {
+      let html = '';
+      const snapshot = await db.collection("result").get();
+      let i = 1;
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.headline && data.image1) {
+          html += `<div class="result-block"><div>${i}) <b>${data.headline}</b></div><img class="result-img" src="${data.image1}" alt="Result Image"></div>`;
+        }
+        i++;
+      });
+      document.getElementById('results-container').innerHTML = html;
+    };
+  </script>
+</head>
+<body>
+  <div class="header">Betting Show</div>
+  <div class="nav-btns">
+    <span class="nav-btn" onclick="location.href='live-match.html'">Live Match</span>
+    <span class="nav-btn" onclick="location.href='upcoming-match.html'">Upcoming Match</span>
+    <span class="nav-btn" onclick="location.href='results.html'">Results</span>
+  </div>
+  <div id="results-container"></div>
+  <div class="footer">Page 2</div>
+</body>
+</html>

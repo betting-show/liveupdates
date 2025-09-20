@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Match 1 - Betting Show</title>
+  <style>
+    body {
+      background-image: url("https://firebasestorage.googleapis.com/v0/b/fir-restaurants-5a977.appspot.com/o/bgm%2Flive-match1.jpeg?alt=media");
+      background-size: cover;
+      font-family: 'Comic Sans MS', 'Arial', sans-serif;
+    }
+    .headline { font-size: 1.6em; font-weight: bold; color: #599e67; text-shadow: 1px 1px 5px #aaa; margin-bottom: 8px;}
+    .sub-headline { font-size: 1.2em; color: #222; margin-bottom: 10px;}
+    .text-detail { font-size: 1.2em; margin-bottom: 16px;}
+    .match-img { display: block; margin: 20px auto; width: 280px; border: 2px solid #e99d3a; border-radius: 6px;}
+    .login-window { margin: 30px auto; width: 320px; border: 2px solid #b2b2b2; background: #f7f7fa; border-radius: 10px; padding: 25px; }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQ780suirYkoWnyiTElsulpPLep7jZOBs",
+      authDomain: "fir-restaurants-5a977.firebaseapp.com",
+      projectId: "fir-restaurants-5a977",
+      storageBucket: "fir-restaurants-5a977.appspot.com",
+      messagingSenderId: "536510676521",
+      appId: "1:536510676521:web:6a9777efcd5b2508afa638",
+      measurementId: "G-5SSTY9BBYT"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let showContent = (data) => {
+      document.getElementById('headline').innerHTML = data.headline || '';
+      document.getElementById('sub-headline').innerHTML = data['sub-headline'] || '';
+      document.getElementById('text').innerHTML = data.text || '';
+      let imgs = '';
+      for(let idx=1; idx<=5; idx++) {
+        if (data['image'+idx]) imgs += `<img class="match-img" src="${data['image'+idx]}" alt="Image">`;
+      }
+      document.getElementById('images').innerHTML = imgs;
+    };
+
+    window.onload = async function() {
+      // Get first document in collection
+      const snapshot = await db.collection("live-match1").limit(1).get();
+      if (snapshot.empty) return;
+      const data = snapshot.docs[0].data();
+
+      // 'type' field: free or premium
+      if (data.type === "premium" && !sessionStorage.getItem('userLogged')) {
+        document.getElementById('main').innerHTML = `
+          <div class="login-window">
+            <label>Username:</label><br>
+            <input type="text" id="uid"><br>
+            <label>Password:</label><br>
+            <input type="password" id="upw"><br>
+            <button onclick="loginUser()">Login</button>
+          </div>
+        `;
+        window.loginUser = async function() {
+          const uname = document.getElementById('uid').value;
+          const upw = document.getElementById('upw').value;
+          const userSnap = await db.collection("users").where("username", "==", uname).where("password", "==", upw).get();
+          if (!userSnap.empty) {
+            sessionStorage.setItem('userLogged', '1');
+            location.reload();
+          }
+          else {
+            alert('Invalid credentials');
+          }
+        }
+      } else {
+        showContent(data);
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="main">
+    <div class="headline" id="headline"></div>
+    <div class="sub-headline" id="sub-headline"></div>
+    <div class="text-detail" id="text"></div>
+    <div id="images"></div>
+  </div>
+</body>
+</html>
