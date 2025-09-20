@@ -23,13 +23,13 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyCQ780suirYkoWnyiTElsulpPLep7jZOBs",
-      authDomain: "fir-restaurants-5a977.firebaseapp.com",
-      projectId: "fir-restaurants-5a977",
-      storageBucket: "fir-restaurants-5a977.appspot.com",
-      messagingSenderId: "536510676521",
-      appId: "1:536510676521:web:6a9777efcd5b2508afa638",
-      measurementId: "G-5SSTY9BBYT"
+      apiKey: "AIzaSyDtf_60BbljqK-GUrhS5RW-uyMqu45SGnc",
+      authDomain: "bshow-bf542.firebaseapp.com",
+      projectId: "bshow-bf542",
+      storageBucket: "bshow-bf542.appspot.com",
+      messagingSenderId: "174793653777",
+      appId: "1:174793653777:web:fd0a3cba725283605abbb0",
+      measurementId: "G-LSQ562PWF7"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -106,7 +106,7 @@
         imageUrl = await storageRef.getDownloadURL();
       }
 
-      let collectionName = `${selectedSection}${matchNo}`; // e.g., live-match1
+      let collectionName = `${selectedSection}${matchNo}`; // e.g., live-match1, etc.
       let payload = {
         headline: headline,
         "sub-headline": subheadline,
