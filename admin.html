@@ -4,88 +4,24 @@
   <title>Admin - Betting Show</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    body {
-      font-family: 'Comic Sans MS', 'Arial', sans-serif;
-      background: #fcfcfc;
-      margin: 0;
-      padding: 0;
-    }
-    .header {
-      text-align: center;
-      font-size: 2em;
-      color: #599e67;
-      font-weight: bold;
-      margin: 18px 0 24px 0;
-    }
-    .nav-btns {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 16px;
-      margin-bottom: 18px;
-    }
-    .nav-btn {
-      border: 2px solid #57a5e0;
-      padding: 10px 16px;
-      border-radius: 8px;
-      background: #fff;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 1.1em;
-    }
-    .mini-window {
-      border: 1.5px solid #aaa;
-      background: #f7f7fa;
-      margin: 36px auto 0 auto;
-      padding: 16px 12px 18px 12px;
-      width: 95%;
-      max-width: 350px;
-      border-radius: 10px;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    label {
-      margin-bottom: 4px;
-      font-size: 1em;
-      color: #333;
-      align-self: flex-start;
-    }
-    .input, input[type="password"], input[type="text"]{
-      width: 100%;
-      font-size: 1em;
-      padding: 8px 6px;
-      margin-bottom: 10px;
-      border-radius: 6px;
-      border: 1px solid #c4c4c4;
-      background: #fff;
-      box-sizing: border-box;
-    }
-    button {
-      width: 100%;
-      padding: 9px 0;
-      font-size: 1.1em;
-      color: #fff;
-      background: #57a5e0;
-      border: none;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 6px;
-    }
-    @media (max-width: 400px) {
-      .mini-window {
-        max-width: 97vw;
-        padding: 8px 3vw;
-      }
-      .header { font-size: 1.15em; }
-    }
+    body { font-family: 'Comic Sans MS', 'Arial', sans-serif; background: #fcfcfc; margin: 0; padding: 0; }
+    .header { text-align: center; font-size: 2em; color: #599e67; font-weight: bold; margin: 18px 0 24px 0; }
+    .nav-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-bottom: 18px;}
+    .nav-btn { border: 2px solid #57a5e0; padding: 8px 16px; border-radius: 8px; background: #fff; font-weight: bold; cursor: pointer; font-size: 1.1em; min-width: 38vw; margin: 8px 4px;}
+    .mini-window, .form-window { border: 2.5px solid #e03c3c; background: #fff; margin: 30px auto; padding: 18px 8vw 18px 8vw; border-radius: 11px; max-width: 370px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;}
+    .big-btn { border: 2px solid #57a5e0; background: #fff; color: #222; font-size: 1.45em; font-weight: bold; border-radius: 8px; width: 65vw; max-width: 310px; margin: 14px auto; padding: 18px 0; cursor: pointer;}
+    .select-list { margin: 18px 0 8px 0; width: 100%;}
+    .input, textarea { width: 100%; font-size: 1.13em; padding: 8px; margin-bottom: 14px; border-radius: 6px; border: 1.3px solid #c4c4c4; background: #f8f8f8; box-sizing: border-box;}
+    label { align-self: flex-start; font-size: 1.18em; margin: 6px 0 2px 0; font-weight: 500;}
+    .save-btn { background: #57a5e0; color: #fff; font-size: 1.1em; border-radius: 7px; padding: 11px 0; width: 100%; border: none; cursor: pointer; font-weight: bold; margin-top: 8px;}
+    .error { color: #e03c3c; text-align: center; margin-bottom: 12px; }
+    @media (max-width: 400px) { .mini-window, .form-window { padding: 10px 4vw; max-width: 99vw;} }
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
   <script>
-    // Your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCQ780suirYkoWnyiTElsulpPLep7jZOBs",
       authDomain: "fir-restaurants-5a977.firebaseapp.com",
@@ -96,6 +32,10 @@
       measurementId: "G-5SSTY9BBYT"
     };
     firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+    let selectedSection = null;
+    let selectedOperation = null;
 
     async function adminLogin() {
       const uname = document.getElementById('admin-user').value;
@@ -105,21 +45,89 @@
         document.getElementById('login-window').style.display = "none";
         document.getElementById('admin-tools').style.display = "flex";
         document.getElementById('admin-section').innerHTML = "";
-      } catch (error) {
-        alert('Login failed: ' + error.message);
-      }
+      } catch (error) { document.getElementById('login-error').innerText = "Login failed: "+error.message;}
     }
 
     function showAdminSection(section) {
+      selectedSection = section;
       document.getElementById('admin-section').innerHTML =
-        `<div style="margin:24px auto;text-align:center">[${section} management coming soon]</div>`;
+        `<div class="mini-window">
+           <button class="big-btn" onclick="showMatchList('add')">Add</button>
+           <button class="big-btn" onclick="showMatchList('edit')">Edit</button>
+           <button class="big-btn" onclick="showMatchList('delete')">Delete</button>
+         </div>`;
+    }
+
+    function showMatchList(operation) {
+      selectedOperation = operation;
+      let matchOptions = "";
+      for (let i=1; i<=5; i++) {
+        matchOptions += `<button class="big-btn" onclick="showMatchForm(${i})">Match ${i}</button>`;
+      }
+      document.getElementById('admin-section').innerHTML =
+        `<div class="mini-window">
+          <div style="font-size:1.35em;font-weight:bold;margin-bottom:12px;">Select Match No.</div>
+          ${matchOptions}
+         </div>`;
+    }
+
+    function showMatchForm(matchNo) {
+      document.getElementById('admin-section').innerHTML =
+        `<form class="form-window" onsubmit="event.preventDefault(); saveMatchForm(${matchNo});">
+          <div id="error-msg" class="error"></div>
+          <label for="headline">Headline 1*</label>
+          <input type="text" id="headline" class="input" required>
+          <label for="subheadline">Sub Headline 1</label>
+          <input type="text" id="subheadline" class="input">
+          <label for="text">Text</label>
+          <textarea id="text" class="input"></textarea>
+          <label for="imageUpload">Image Upload</label>
+          <input type="file" id="imageUpload" accept="image/*" class="input">
+          <button type="submit" class="save-btn">Save</button>
+        </form>`;
+    }
+
+    async function saveMatchForm(matchNo) {
+      let errorContainer = document.getElementById('error-msg');
+      const headline = document.getElementById('headline').value.trim();
+      if (!headline) {
+        errorContainer.innerText = "Headline is mandatory.";
+        return;
+      }
+      errorContainer.innerText = "";
+      const subheadline = document.getElementById('subheadline').value.trim();
+      const text = document.getElementById('text').value.trim();
+      const imageFile = document.getElementById('imageUpload').files[0];
+
+      let imageUrl = "";
+      if (imageFile) {
+        const storageRef = storage.ref(`${selectedSection}${matchNo}/${imageFile.name}`);
+        await storageRef.put(imageFile);
+        imageUrl = await storageRef.getDownloadURL();
+      }
+
+      let collectionName = `${selectedSection}${matchNo}`; // e.g., live-match1
+      let payload = {
+        headline: headline,
+        "sub-headline": subheadline,
+        text: text,
+      };
+      if (imageUrl) { payload.image1 = imageUrl; }
+
+      await db.collection(collectionName).add(payload);
+
+      document.getElementById('admin-section').innerHTML =
+        `<div class="mini-window" style="color:#599e67;font-size:1.3em;">
+           Data Saved Successfully!
+         </div>`;
     }
   </script>
 </head>
 <body>
   <div class="header">Admin Panel</div>
   <div class="mini-window" id="login-window">
-    <label for="admin-user">Admin Username (Email):</label>
+    <div id="login-error" class="error"></div>
+    <label for="admin-user">Admin Email:</label>
     <input type="text" id="admin-user" class="input" autocomplete="username">
     <label for="admin-pass">Password:</label>
     <input type="password" id="admin-pass" class="input" autocomplete="current-password">
@@ -129,7 +137,6 @@
     <span class="nav-btn" onclick="showAdminSection('live-match')">Live Match</span>
     <span class="nav-btn" onclick="showAdminSection('upcoming-match')">Upcoming Match</span>
     <span class="nav-btn" onclick="showAdminSection('results')">Results</span>
-    <span class="nav-btn" onclick="showAdminSection('bgi')">BGI</span>
   </div>
   <div id="admin-section"></div>
 </body>
