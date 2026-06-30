@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reception - Manage Bookings</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    
+    <style>
+        :root {
+            --bg-color: #f4f5f7;
+            --card-bg: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --primary-blue: #2563eb;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); display: flex; justify-content: center; align-items: start; min-height: 100vh; padding: 20px; }
+        .web-app-container { width: 100%; max-width: 480px; background: #fcfcfd; min-height: 85vh; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border-color); position: relative; }
+        .header { padding: 20px 20px 10px 20px; display: flex; align-items: center; justify-content: space-between; background: #fff; }
+        .header-left { display: flex; align-items: center; }
+        .logo-badge { background-color: #0f172a; color: white; font-weight: 800; padding: 6px 10px; border-radius: 6px; font-size: 14px; margin-right: 12px; }
+        .app-title { font-size: 20px; font-weight: 800; text-transform: uppercase; color: #000; }
+        .role-badge { font-size: 11px; font-weight: 700; text-transform: uppercase; background: #e2e8f0; color: #334155; padding: 3px 8px; border-radius: 12px; margin-left: 8px; }
+        .role-badge.owner { background: #dbeafe; color: #1e40af; }
+        .logout-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; border-radius: 5px; display: flex; align-items: center; justify-content: center; }
+        .logout-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.5; }
+        .nav-tabs { display: flex; background: #fff; border-bottom: 2px solid var(--border-color); }
+        .tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 12px 0; font-size: 13px; font-weight: 600; color: var(--text-muted); text-decoration: none; cursor: pointer; }
+        .tab-item svg { width: 22px; height: 22px; margin-bottom: 4px; fill: none; stroke: currentColor; stroke-width: 2; }
+        .calendar-container { padding: 15px 10px; background: #fff; border-radius: 12px; margin: 10px; box-shadow: 0 3px 12px #eee; }
+        .calendar { display: grid; grid-template-columns: repeat(7,1fr); gap: 8px; background: #f1f1f1; padding: 10px; border-radius: 6px; }
+        .calendar-day { height: 40px; background: #fff; border: 1px solid #ccc; border-radius: 4px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: 600; }
+        .calendar-day.selected { background: #2979ff; color: #fff; border-color: #2979ff; }
+        .month-controls { display: flex; justify-content: center; align-items: center; margin-bottom: 14px; }
+        .month-btn { background: #2979ff; color: #fff; border: none; border-radius: 7px; padding: 6px 15px; font-size: 14px; margin: 0 9px; font-weight: bold; cursor: pointer; }
+        #month-label { font-size: 16px; font-weight: bold; }
+        #bookings-list { margin-top: 13px; display: flex; flex-direction: column; gap: 10px; }
+        .booking-card { background: #eaf8ee; padding: 12px 14px; border-radius: 8px; border: 1px solid #89c6b4; line-height: 1.6; font-size: 14px; }
+        .empty-room-card { background: #f8fafc; border: 2px dashed #cbd5e1; padding: 12px 14px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: var(--text-main); font-weight: 700; font-size: 14px; }
+        .past-empty-card { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 12px 14px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; color: #94a3b8; font-weight: 500; font-size: 14px; }
+        .plus-badge { background: #2979ff; color: white; border-radius: 6px; padding: 2px 8px; font-size: 14px; font-weight: 800; }
+        .action-btn { margin-top: 8px; margin-right: 6px; cursor: pointer; padding: 5px 14px; border: none; border-radius: 6px; font-size: 12px; font-weight: bold; text-transform: uppercase; display: inline-block; }
+        .edit-btn { background: #ffa726 !important; color: #fff !important; }
+        .view-bill-btn { background: #10b981 !important; color: #fff !important; }
+        .delete-btn { background: #ef5350 !important; color: #fff !important; }
+        .modal-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+        .modal { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 4px 24px rgba(0,0,0,0.15); width: 90%; max-width: 360px; max-height: 90vh; overflow-y: auto; }
+        .modal input { width: 100%; margin-bottom: 10px; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; background: #fff; }
+        .modal-btn-row { display: flex; justify-content: flex-end; margin-top: 12px; gap: 8px; align-items: center; }
+        .modal-btn-row button { padding: 6px 14px; border-radius: 6px; border: 1px solid #ccc; background: #fff; cursor: pointer; font-weight: 600; font-size: 13px; }
+        .modal-title { margin-bottom: 16px; font-weight: bold; font-size: 18px; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        .error { color: #e53935; margin-bottom: 8px; font-size: 13px; }
+        .settled-bill-box { background: #f8fafc; padding: 12px; border-radius: 8px; font-size: 13.5px; line-height: 1.6; border: 1px solid #e2e8f0; margin-bottom: 12px; }
+        .bill-item-row { display: flex; justify-content: space-between; font-size: 12.5px; color: #475569; padding: 2px 0; border-bottom: 1px dashed #cbd5e1; }
+    </style>
+</head>
+<body>
+
+    <div class="web-app-container">
+        <header class="header">
+            <div class="header-left">
+                <div class="logo-badge">DR</div>
+                <h1 class="app-title">Demo Resort</h1>
+                <span id="headerRole" class="role-badge" style="display: none;"></span>
+            </div>
+            <button id="logoutBtn" class="logout-btn" onclick="logoutSession()" style="display: none;" title="Logout">
+                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>
+            </button>
+        </header>
+
+        <nav class="nav-tabs">
+            <a class="tab-item" href="index.html">
+                <svg viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                Dashboard
+            </a>
+            <a class="tab-item" href="addbill.html">
+                <svg viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+                New bill
+            </a>
+            <a class="tab-item" href="pending.html">
+                <svg viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Pending Orders
+            </a>
+            <a class="tab-item">
+                <svg viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                Account
+            </a>
+        </nav>
+
+        <div id="appWorkspace" style="flex: 1; overflow-y: auto;">
+            <div class="calendar-container" id="calendarContainer">
+                <h2 style="text-align:center; margin-bottom:11px; font-size: 18px;">Bookings Calendar</h2>
+                <div class="month-controls">
+                    <button class="month-btn" onclick="changeMonth(-1)">&#8592; Prev</button>
+                    <span id="month-label"></span>
+                    <button class="month-btn" onclick="changeMonth(1)">Next &#8594;</button>
+                </div>
+                <div id="calendar" class="calendar"></div>
+                <div id="bookings-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="customAlertModalBg" class="modal-bg" style="display:none; z-index: 3000;">
+        <div class="modal">
+            <div class="modal-title" id="customAlertTitle">Alert</div>
+            <div id="customAlertText" style="font-size:14px; line-height:1.5; margin-bottom:15px;"></div>
+            <div class="modal-btn-row">
+                <button type="button" class="action-btn view-bill-btn" style="margin-top:0;" onclick="closeCustomAlert()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="customConfirmModalBg" class="modal-bg" style="display:none; z-index: 3000;">
+        <div class="modal">
+            <div class="modal-title">Confirm Action</div>
+            <div id="customConfirmText" style="font-size:14px; line-height:1.5; margin-bottom:15px;"></div>
+            <div class="modal-btn-row">
+                <button type="button" onclick="closeCustomConfirm(false)">Cancel</button>
+                <button type="button" class="action-btn delete-btn" style="margin-top:0;" onclick="closeCustomConfirm(true)">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModalBg" class="modal-bg" style="display:none;">
+        <form class="modal" id="editModal" onsubmit="event.preventDefault();submitEdit();">
+            <div class="modal-title">Edit Booking</div>
+            <div id="editError" class="error"></div>
+            <input type="text" id="editName" placeholder="Name" required>
+            <input type="text" id="editPhone" placeholder="Phone" required>
+            <input type="text" id="editCheckin" placeholder="Check-in Date" required>
+            <input type="text" id="editCheckout" placeholder="Check-out Date" required>
+            <input type="text" id="editRoomNo" placeholder="Room No" required>
+            <input type="number" id="editTotal" placeholder="Total Amount" required>
+            <input type="number" id="editAdvance" placeholder="Advance Amount" required>
+            <div class="modal-btn-row">
+                <button type="button" onclick="closeEditModal()">Cancel</button>
+                <button type="submit" class="action-btn edit-btn" style="margin-top:0;">Save</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Settled Invoice Modal -->
+    <div id="settledBillModalBg" class="modal-bg" style="display:none;">
+        <div class="modal">
+            <div class="modal-title" id="settledBillTitle">Settled Bill Summary</div>
+            <div id="settledBillContent" class="settled-bill-box"></div>
+            <div class="modal-btn-row">
+                <button type="button" class="action-btn edit-btn" style="margin-top:0;" onclick="closeSettledBillModal()">Close Bill</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div id="deleteModalBg" class="modal-bg" style="display:none;">
+        <div class="modal">
+            <div class="modal-title">Delete Booking</div>
+            <div id="deleteText" style="font-size:14px; line-height:1.5; margin-bottom:10px;"></div>
+            <div id="deleteError" class="error"></div>
+            <div class="modal-btn-row">
+                <button type="button" onclick="closeDeleteModal()">Cancel</button>
+                <button type="button" class="action-btn delete-btn" style="margin-top:0;" onclick="submitDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const OWNER_EMAIL = "demo.booking2026@gmail.com";
+        let confirmCallback = null;
+        const customRoomsList = ["A-1", "Twin-1", "Twin-2", "Paddy", "P-1", "P-2", "Delux"];
+        let calendarMonth = new Date().getMonth();
+        let calendarYear = new Date().getFullYear();
+        let selectedDate = null;
+        let currentEditId = null;
+        let currentDeleteId = null;
+        let currentDeleteData = null;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCebk_0DBBu5w0cvWP0lUKqQanmiwoC42U",
+            authDomain: "booking-25ba4.firebaseapp.com",
+            projectId: "booking-25ba4",
+            storageBucket: "booking-25ba4.firebasestorage.app",
+            messagingSenderId: "924758316703",
+            appId: "1:924758316703:web:6cee8188781143ae1774aa"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
+                window.location.href = "index.html";
+                return;
+            }
+            const roleBadge = document.getElementById('headerRole');
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (user.email === OWNER_EMAIL) {
+                roleBadge.textContent = "Owner";
+                roleBadge.className = "role-badge owner";
+            } else {
+                roleBadge.textContent = "Staff";
+                roleBadge.className = "role-badge";
+            }
+            roleBadge.style.display = 'inline-block';
+            logoutBtn.style.display = 'flex';
+            
+            // Initialization
+            const todayStr = new Date().toLocaleDateString('sv'); 
+            selectedDate = todayStr;
+            renderCalendar();
+            showBookingsOnDate(selectedDate);
+        });
+
+        function logoutSession(){
+            showCustomConfirm("Are you sure you want to log out?", function(confirmed){
+                if(confirmed) { auth.signOut(); }
+            });
+        }
+
+        function verifyOwnerSession() {
+            return auth.currentUser && auth.currentUser.email === OWNER_EMAIL;
+        }
+
+        function changeMonth(diff){
+            calendarMonth += diff;
+            if(calendarMonth < 0){ calendarMonth = 11; calendarYear--; }
+            if(calendarMonth > 11){ calendarMonth = 0; calendarYear++; }
+            selectedDate = null;
+            renderCalendar();
+            document.getElementById('bookings-list').innerHTML = '';
+        }
+
+        function renderCalendar(){
+            const calDiv = document.getElementById('calendar');
+            calDiv.innerHTML = '';
+            const days = new Date(calendarYear, calendarMonth+1, 0).getDate();
+            document.getElementById('month-label').textContent = `${calendarYear}-${String(calendarMonth+1).padStart(2,'0')}`;
+            for(let d=1; d<=days; d++){
+                const dateStr = `${calendarYear}-${String(calendarMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const el = document.createElement('div');
+                el.className = 'calendar-day'+(selectedDate===dateStr?' selected':'');
+                el.textContent = d;
+                el.onclick = function(){
+                    selectedDate = dateStr;
+                    renderCalendar();
+                    showBookingsOnDate(dateStr);
+                }
+                calDiv.appendChild(el);
+            }
+        }
+
+        function showBookingsOnDate(dateStr) {
+            const todayStr = new Date().toLocaleDateString('sv');
+            const isPastDate = dateStr < todayStr;
+            db.collection('bookings').where('checkin', '==', dateStr).get().then(snapshot => {
+                const listDiv = document.getElementById('bookings-list');
+                listDiv.innerHTML = '';
+                let roomBookingsMap = {};
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.roomNo) roomBookingsMap[data.roomNo] = { id: doc.id, ...data };
+                });
+
+                customRoomsList.forEach(roomName => {
+                    if (roomBookingsMap[roomName]) {
+                        const data = roomBookingsMap[roomName];
+                        const isSettled = data.checkedIn === "Completed";
+                        let actionButtonsHTML = "";
+                        
+                        if (isSettled) {
+                            actionButtonsHTML = `<button class="action-btn view-bill-btn" onclick="openSettledBillMiniWindow('${data.id}')">View Bill</button>`;
+                        } else if (isPastDate) {
+                            actionButtonsHTML = `<button class="action-btn view-bill-btn" style="background:#34495e !important;" onclick="window.location.href='pending.html'">View Runtime Details</button>`;
+                        } else {
+                            actionButtonsHTML = `
+                                <button class="action-btn edit-btn" onclick="openEditModal('${data.id}')">Edit</button>
+                                <button class="action-btn delete-btn" onclick="openDeleteModal('${data.id}')">Delete</button>
+                            `;
+                        }
+
+                        listDiv.innerHTML += `
+                            <div class="booking-card" style="${isSettled ? 'background:#f0fdf4; border-color:#bbf7d0;' : ''}">
+                                 <div style="font-size:15px; font-weight:800; color:#1e293b; margin-bottom:4px; text-transform:uppercase; display:flex; justify-content:space-between;">
+                                     <span>Room: ${roomName}</span>
+                                     ${isSettled ? '<span style="color:#166534; font-size:11px; background:#dcfce7; padding:2px 8px; border-radius:12px;">✅ SETTLED</span>' : ''}
+                                 </div>
+                                 <b>Guest Name:</b> ${data.name}<br>
+                                 <b>Check-in:</b> ${data.checkin}<br>
+                                 <b>Check-out:</b> ${data.checkout}<br>
+                                 <b>Total Rent:</b> ₹${data.total}<br>
+                                 <b>Advance Paid:</b> ₹${data.advance}<br>
+                                 <b>Phone:</b> ${data.phone}<br>
+                                 <div>${actionButtonsHTML}</div>
+                            </div>`;
+                    } else {
+                        if (isPastDate) {
+                            listDiv.innerHTML += `
+                                <div class="past-empty-card">
+                                    <span>Room ${roomName}</span>
+                                    <span style="font-size: 12px; font-style: italic; color:#94a3b8;">No Booking Recorded</span>
+                                </div>`;
+                        } else {
+                            listDiv.innerHTML += `
+                                <a href="newbooking.html?room=${encodeURIComponent(roomName)}&date=${encodeURIComponent(dateStr)}" class="empty-room-card">
+                                    <span>Room ${roomName}</span>
+                                    <span class="plus-badge">+ Add Booking</span>
+                                </a>`;
+                        }
+                    }
+                });
+            });
+        }
+
+        function openSettledBillMiniWindow(docId) {
+            db.collection('bookings').doc(docId).get().then(doc => {
+                if(!doc.exists) return;
+                const data = doc.data();
+                document.getElementById('settledBillTitle').innerText = `Room Invoice (${data.roomNo})`;
+                let totalCharges = 0, billsHTML = "";
+                if (data.extraBills) {
+                    data.extraBills.forEach(bill => {
+                        totalCharges += parseFloat(bill.amount) || 0;
+                        billsHTML += `<div class="bill-item-row"><span>📌 ${bill.billType}</span><b>₹${bill.amount}</b></div>`;
+                    });
+                }
+                document.getElementById('settledBillContent').innerHTML = `
+                    <b>Guest Name:</b> ${data.name}<br>
+                    <b>Stay Range:</b> ${data.checkin} to ${data.checkout}<br>
+                    <hr><b>Base Rent:</b> ₹${data.total}<br>
+                    ${totalCharges > 0 ? `<hr>${billsHTML}` : ''}
+                    <hr><div style="font-weight:800; color:#166534;">Final Balance: ₹0 (Paid)</div>`;
+                document.getElementById('settledBillModalBg').style.display = 'flex';
+            });
+        }
+        function closeSettledBillModal() { document.getElementById('settledBillModalBg').style.display = 'none'; }
+
+        function openEditModal(docId){
+            if (!verifyOwnerSession()) { showCustomAlert("Owner only access this", "Access Denied"); return; }
+            currentEditId = docId;
+            db.collection('bookings').doc(docId).get().then(doc=>{
+                const data = doc.data();
+                document.getElementById('editName').value = data.name || '';
+                document.getElementById('editPhone').value = data.phone || '';
+                document.getElementById('editCheckin').value = data.checkin || '';
+                document.getElementById('editCheckout').value = data.checkout || '';
+                document.getElementById('editRoomNo').value = data.roomNo || '';
+                document.getElementById('editTotal').value = data.total || '';
+                document.getElementById('editAdvance').value = data.advance || '';
+                document.getElementById('editModalBg').style.display = 'flex';
+            });
+        }
+        function closeEditModal() { document.getElementById('editModalBg').style.display='none'; }
+        
+        function submitEdit(){
+            db.collection('bookings').doc(currentEditId).update({
+                name: document.getElementById('editName').value.trim(),
+                phone: document.getElementById('editPhone').value.trim(),
+                checkin: document.getElementById('editCheckin').value.trim(),
+                checkout: document.getElementById('editCheckout').value.trim(),
+                roomNo: document.getElementById('editRoomNo').value.trim(),
+                total: parseFloat(document.getElementById('editTotal').value),
+                advance: parseFloat(document.getElementById('editAdvance').value)
+            }).then(() => { closeEditModal(); showBookingsOnDate(selectedDate); });
+        }
+
+        function openDeleteModal(docId){
+            if (!verifyOwnerSession()) { showCustomAlert("Owner only access this", "Access Denied"); return; }
+            currentDeleteId = docId;
+            db.collection('bookings').doc(docId).get().then(doc=>{
+                currentDeleteData = doc.data();
+                document.getElementById('deleteText').innerHTML = `<b>Name:</b> ${currentDeleteData.name}<br><b>Room:</b> ${currentDeleteData.roomNo}`;
+                document.getElementById('deleteModalBg').style.display = 'flex';
+            });
+        }
+        function closeDeleteModal() { document.getElementById('deleteModalBg').style.display='none'; }
+        
+        function submitDelete(){
+            if (currentDeleteData && currentDeleteData.bookingGroupId) {
+                db.collection('bookings').where('bookingGroupId', '==', currentDeleteData.bookingGroupId).get().then(snapshot => {
+                    const batch = db.batch();
+                    snapshot.forEach(doc => batch.delete(doc.ref));
+                    return batch.commit();
+                }).then(() => { closeDeleteModal(); showBookingsOnDate(selectedDate); });
+            } else {
+                db.collection('bookings').doc(currentDeleteId).delete().then(()=>{ closeDeleteModal(); showBookingsOnDate(selectedDate); });
+            }
+        }
+
+        function showCustomAlert(message, title="Notice") {
+            document.getElementById('customAlertTitle').innerText = title;
+            document.getElementById('customAlertText').innerText = message;
+            document.getElementById('customAlertModalBg').style.display = 'flex';
+        }
+        function closeCustomAlert() { document.getElementById('customAlertModalBg').style.display = 'none'; }
+        function showCustomConfirm(message, callback) {
+            confirmCallback = callback;
+            document.getElementById('customConfirmText').innerText = message;
+            document.getElementById('customConfirmModalBg').style.display = 'flex';
+        }
+        function closeCustomConfirm(status) {
+            document.getElementById('customConfirmModalBg').style.display = 'none';
+            if(confirmCallback) { confirmCallback(status); confirmCallback = null; }
+        }
+    </script>
+</body>
+</html>
